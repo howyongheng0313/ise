@@ -38,7 +38,7 @@ SantaAdventure/
 │   ├── items/                   # 道具与物品
 │   │   ├── santa_magic.png              # 法球弹射物 (32×32)
 │   │   ├── wildmen_snow.png             # 雪球弹射物 (32×32)
-│   │   ├── santa_hourglass.png          # 时间延长道具 (64×64)
+│   │   ├── santa_hourglass.png          # 时间延长道具 (64×64)，同时用作计时器UI图标
 │   │   └── christmass_tree.png          # 圣诞树 (626×626)
 │   │
 │   ├── backgrounds/             # 背景图
@@ -48,22 +48,19 @@ SantaAdventure/
 │   │   └── maze_floor.png              # 迷宫地板纹理（待制作）
 │   │
 │   ├── ui/                      # UI 元素
-│   │   ├── health_bar.png              # 血条（待制作）
-│   │   ├── timer_icon.png              # 计时器图标（待制作）
-│   │   └── score_display.png           # 分数显示（待制作）
+│   │   ├── heart_full.png              # 实心 
+│   │   ├── heart_empty.png             # 空心（当被雪球击中）
+│   │   └── kill_icon.png               # 击杀图标（使用pygame显示分数）
 │   │
 │   └── audio/                   # 音频资产
-│       ├── bgm/                         # 背景音乐
+│       ├── bgm/                        # 背景音乐
 │       │   ├── menu_bgm.ogg            # 菜单音乐（待添加）
 │       │   ├── level1_bgm.ogg          # 第一关音乐（待添加）
 │       │   └── level2_bgm.ogg          # 第二关音乐（待添加）
 │       │
 │       └── sfx/                         # 音效
 │           ├── magic_shoot.ogg          # 法球发射（待添加）
-│           ├── snow_hit.ogg             # 雪球命中（待添加）
-│           ├── enemy_die.ogg            # 敌人死亡（待添加）
 │           ├── santa_hurt.ogg           # 圣诞老人受伤（待添加）
-│           ├── santa_die.ogg            # 圣诞老人死亡（待添加）
 │           ├── item_pickup.ogg          # 道具拾取（待添加）
 │           ├── level_clear.ogg          # 过关音效（待添加）
 │           └── game_over.ogg            # Game Over 音效（待添加）
