@@ -54,16 +54,16 @@ SantaAdventure/
 │   │
 │   └── audio/                   # 音频资产
 │       ├── bgm/                        # 背景音乐
-│       │   ├── menu_bgm.ogg            # 菜单音乐（待添加）
-│       │   ├── level1_bgm.ogg          # 第一关音乐（待添加）
+│       │   ├── menu_bgm.ogg            # 菜单音乐
+│       │   ├── level1_bgm.ogg          # 第一关音乐
 │       │   └── level2_bgm.ogg          # 第二关音乐（待添加）
 │       │
 │       └── sfx/                         # 音效
-│           ├── magic_shoot.ogg          # 法球发射（待添加）
-│           ├── santa_hurt.ogg           # 圣诞老人受伤（待添加）
-│           ├── item_pickup.ogg          # 道具拾取（待添加）
-│           ├── level_clear.ogg          # 过关音效（待添加）
-│           └── game_over.ogg            # Game Over 音效（待添加）
+│           ├── magic_shoot.ogg          # 法球发射
+│           ├── santa_hurt.ogg           # 圣诞老人受伤
+│           ├── item_pickup.ogg          # 道具拾取
+│           ├── level_clear.ogg          # 过关音效
+│           └── game_over.ogg            # Game Over 音效
 │
 └── docs/                        # 文档（非游戏运行必需）
     └── storyboard.png                  # 故事板草图
