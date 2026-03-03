@@ -20,7 +20,7 @@ SantaAdventure/
 │   ├── sprites/                 # 精灵图
 │   │   ├── santa/               # 圣诞老人
 │   │   │   ├── santa_fronts.png         # 正面行走 (896×256, 3帧 ≈ 299×256/帧)
-│   │   │   ├── santa_left.png           # 左移行走 (1408×256, 5帧 ≈ 282×256/帧)
+│   │   │   ├── santa_right.png          # 向右行走 (1408×256, 5帧 ≈ 282×256/帧)
 │   │   │   ├── santa_attack.png         # 攻击动画 (896×256, 3帧)
 │   │   │   ├── santa_hurts.png          # 受伤动画 (384×256, 1-2帧)
 │   │   │   ├── santa_dead.png           # 死亡动画 (1056×256, 3-4帧)
@@ -112,7 +112,7 @@ def load_spritesheet(path, frame_count, frame_size=None):
 | 文件名 | 尺寸 | 推测帧数 | 每帧尺寸 |
 |--------|------|---------|---------|
 | `santa_fronts.png` | 896×256 | 3 | ~299×256 |
-| `santa_left.png` | 1408×256 | 5 | ~282×256 |
+| `santa_right.png` | 1408×256 | 5 | ~282×256 |
 | `santa_attack.png` | 896×256 | 3 | ~299×256 |
 | `santa_hurts.png` | 384×256 | 1-2 | 需确认 |
 | `santa_dead.png` | 1056×256 | 3-4 | 需确认 |
