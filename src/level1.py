@@ -369,12 +369,36 @@ def run_level1(screen, clock):
         dict with 'next_state' and 'score'
     """
     # Load background (already 1280x720)
-    bg = load_image(os.path.join(BACKGROUNDS_DIR, "forest_bg.png"))
+    bg = load_image(os.path.join(BACKGROUNDS_DIR, "forest_bg.png")).convert()
     bg_height = bg.get_height()
     bg_y = 0.0
 
     # Load city gate (already 1280x720)
-    city_gate = load_image(os.path.join(BACKGROUNDS_DIR, "city_gate.png"))
+    city_gate = load_image(os.path.join(BACKGROUNDS_DIR, "city_gate.png")).convert()
+
+    # Pre-compute seam blend strips to hide tile junction lines.
+    # Each strip crossfades the bottom rows of one image into the top rows of the next,
+    # and is drawn on top of the tiles at the seam position each frame.
+    SEAM_H = 16
+    _bg_w = bg.get_width()
+
+    # Forest-to-forest seam strip
+    bg_seam = pygame.Surface((_bg_w, SEAM_H))
+    bg_seam.blit(bg, (0, 0), (0, bg_height - SEAM_H, _bg_w, SEAM_H))
+    for _row in range(SEAM_H):
+        _row_surf = pygame.Surface((_bg_w, 1))
+        _row_surf.blit(bg, (0, 0), (0, _row, _bg_w, 1))
+        _row_surf.set_alpha(int(255 * _row / SEAM_H))
+        bg_seam.blit(_row_surf, (0, _row))
+
+    # Gate-to-forest seam strip (city_gate bottom → forest top)
+    gate_seam = pygame.Surface((_bg_w, SEAM_H))
+    gate_seam.blit(city_gate, (0, 0), (0, bg_height - SEAM_H, _bg_w, SEAM_H))
+    for _row in range(SEAM_H):
+        _row_surf = pygame.Surface((_bg_w, 1))
+        _row_surf.blit(bg, (0, 0), (0, _row, _bg_w, 1))
+        _row_surf.set_alpha(int(255 * _row / SEAM_H))
+        gate_seam.blit(_row_surf, (0, _row))
 
     # Create Santa
     santa = Santa((ROAD_LEFT + ROAD_RIGHT) // 2, SCREEN_HEIGHT - 100)
@@ -402,7 +426,7 @@ def run_level1(screen, clock):
 
     # Background scroll phases: "scrolling" -> "gate_entering" -> "gate_reached"
     bg_phase = "scrolling"
-    gate_scroll = 0.0  # how far the gate has scrolled in from top (0 to SCREEN_HEIGHT)
+    gate_draw_y = 0.0  # screen y position of city_gate top edge
     GATE_STOP_Y = int(SCREEN_HEIGHT * 0.35)  # y position where Santa stops at gate
 
     # Audio
@@ -484,15 +508,17 @@ def run_level1(screen, clock):
             # Transition to gate_entering when time runs out
             if time_left <= 0 and not santa.is_dead:
                 bg_phase = "gate_entering"
-                gate_scroll = 0.0
+                # Position gate so its bottom edge aligns with Tile 0's top edge (paper-roll connection)
+                _s = int(bg_y) % bg_height
+                gate_draw_y = float(_s - 2 * bg_height - 1)  # -1 ensures gate bottom overlaps forest top by 1px
 
         elif bg_phase == "gate_entering":
             # Both forest and gate scroll; gate slides in from top
             bg_y += BG_SCROLL_SPEED
-            gate_scroll += BG_SCROLL_SPEED
-            # Once gate fully covers the screen, stop scrolling
-            if gate_scroll >= SCREEN_HEIGHT:
-                gate_scroll = SCREEN_HEIGHT
+            gate_draw_y += BG_SCROLL_SPEED
+            # Once gate top reaches screen top, it fully covers the screen
+            if gate_draw_y >= 0:
+                gate_draw_y = 0.0
                 bg_phase = "gate_reached"
 
         elif bg_phase == "gate_reached":
@@ -573,22 +599,33 @@ def run_level1(screen, clock):
         if bg_phase == "scrolling":
             # Normal tiling forest loop
             scroll_offset = int(bg_y) % bg_height
-            start_y = scroll_offset - bg_height
+            start_y = scroll_offset - bg_height - 1  # -1 ensures 1px overlap between tiles, hiding seam
             for i in range(3):
                 y = start_y + i * bg_height
                 screen.blit(bg, (shake_offset[0], y + shake_offset[1]))
+            # Blend strip over the tile seam to hide the junction line
+            seam_y = start_y + bg_height - SEAM_H // 2
+            if -SEAM_H < seam_y < SCREEN_HEIGHT:
+                screen.blit(bg_seam, (shake_offset[0], seam_y + shake_offset[1]))
 
         elif bg_phase == "gate_entering":
             # Forest scrolls down, city_gate slides in from top
             # Draw forest (still scrolling)
             scroll_offset = int(bg_y) % bg_height
-            start_y = scroll_offset - bg_height
+            start_y = scroll_offset - bg_height - 1  # -1 ensures 1px overlap between tiles, hiding seam
             for i in range(3):
                 y = start_y + i * bg_height
                 screen.blit(bg, (shake_offset[0], y + shake_offset[1]))
-            # Draw city_gate sliding in from top
-            gate_draw_y = (gate_scroll) - SCREEN_HEIGHT
-            screen.blit(city_gate, (shake_offset[0], gate_draw_y + shake_offset[1]))
+            # Draw city_gate at its current scroll position (seamlessly connected above forest tile)
+            screen.blit(city_gate, (shake_offset[0], int(gate_draw_y) + shake_offset[1]))
+            # Blend strip over forest tile seam
+            seam_y = start_y + bg_height - SEAM_H // 2
+            if -SEAM_H < seam_y < SCREEN_HEIGHT:
+                screen.blit(bg_seam, (shake_offset[0], seam_y + shake_offset[1]))
+            # Blend strip over gate-to-forest seam (at gate's bottom edge)
+            gate_seam_y = int(gate_draw_y) + bg_height - SEAM_H // 2
+            if -SEAM_H < gate_seam_y < SCREEN_HEIGHT:
+                screen.blit(gate_seam, (shake_offset[0], gate_seam_y + shake_offset[1]))
 
         elif bg_phase == "gate_reached":
             # Only city_gate, static
