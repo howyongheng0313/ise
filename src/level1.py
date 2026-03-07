@@ -312,10 +312,6 @@ class Wildman(pygame.sprite.Sprite):
                     # Done throwing — remove this wildman
                     self.death_finished = True
                     return None
-                # Only continue attacking if outside safe zone
-                if abs(self.y - santa_rect.centery) < self.SAFE_ZONE_Y:
-                    self.death_finished = True
-                    return None
                 # Enter cooldown idle before next throw
                 self.set_state("idle")
                 self.idle_timer = random.uniform(1.5, 3.0)
@@ -579,14 +575,13 @@ def run_level1(screen, clock):
         if not santa.is_dead:
             for sb in snowballs[:]:
                 if sb.rect.colliderect(santa.rect):
+                    snowballs.remove(sb)
                     if santa.take_damage():
-                        snowballs.remove(sb)
                         screen_shake.start(SCREEN_SHAKE_DURATION, SCREEN_SHAKE_INTENSITY)
                         particle_emitter.emit(santa.rect.centerx, santa.rect.centery, 8,
                                               color=(255, 255, 255), speed_range=(40, 120))
                         if "hurt" in sfx:
                             sfx["hurt"].play()
-                    break
 
         # Update effects
         snowfall.update(dt)

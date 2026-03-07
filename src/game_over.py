@@ -7,7 +7,7 @@ import random
 import math
 from src.settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
-    WHITE, BLACK, RED,
+    WHITE, RED,
     BGM_DIR, SFX_DIR,
     STATE_MENU
 )

@@ -2,10 +2,9 @@
 Public tools (Sprite sheet segmentation, collision detection, particles system)
 """
 import pygame
-import os
 import random
 import math
-from src.settings import SPRITES_DIR, SNOWFLAKE_COUNT, SCREEN_WIDTH, SCREEN_HEIGHT
+from src.settings import SNOWFLAKE_COUNT, SCREEN_WIDTH, SCREEN_HEIGHT
 
 
 # ========== Sprite Sheet Loading ==========
@@ -50,28 +49,6 @@ def load_image(path, scale=None):
     if scale:
         image = pygame.transform.scale(image, scale)
     return image
-
-
-def load_all_spritesheets(config, base_dir=None, scale=None):
-    """
-    Load all sprite sheets from a config dictionary.
-
-    Args:
-        config: Dict of {key: (relative_path, frame_count)}
-        base_dir: Base directory for sprite paths (defaults to SPRITES_DIR)
-        scale: Optional (width, height) to scale all frames
-
-    Returns:
-        Dict of {key: [frame_surfaces]}
-    """
-    if base_dir is None:
-        base_dir = SPRITES_DIR
-
-    sheets = {}
-    for key, (rel_path, frame_count) in config.items():
-        full_path = os.path.join(base_dir, rel_path)
-        sheets[key] = load_spritesheet(full_path, frame_count, scale)
-    return sheets
 
 
 # ========== Text Rendering ==========

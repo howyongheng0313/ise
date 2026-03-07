@@ -54,7 +54,6 @@ def run_menu(screen, clock):
         hover = button_rect.collidepoint(mouse_pos)
 
         for event in pygame.event.get():
-            print(f"[DEBUG] Menu event: {event}")  # temporary debug
             if event.type == pygame.QUIT:
                 pygame.quit()
                 raise SystemExit

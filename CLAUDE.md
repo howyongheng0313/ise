@@ -1,6 +1,7 @@
 # CLAUDE.md — 圣诞老人大冒险 全局开发规则
 
 > 📎 关联文档：[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) — 文件结构、命名规范、精灵表参数、分工对照
+> 📎 关联文档：[LEVEL2_PLAN.md](./LEVEL2_PLAN.md) — 第二关开发计划（像素分析迷宫方案、分步任务清单）
 
 ## 项目概述
 
