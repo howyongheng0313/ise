@@ -9,7 +9,7 @@ from collections import deque
 
 from src.settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
-    SPRITES_DIR, ITEMS_DIR, BACKGROUNDS_DIR, BGM_DIR, SFX_DIR,
+    SPRITES_DIR, ITEMS_DIR, BACKGROUNDS_DIR, UI_DIR, BGM_DIR, SFX_DIR,
     STATE_GAME_OVER, STATE_VICTORY,
     LEVEL2_TIMER, TIME_BONUS, HUNTER_PATHFIND_INTERVAL, ANIMATION_SPEED,
     MAZE_GRID, MAZE_COLS, MAZE_ROWS, MAZE_TILE_SIZE,
@@ -17,6 +17,7 @@ from src.settings import (
     SANTA_MAZE_SPEED, HUNTER_SPEED_PPS,
     SANTA_DISPLAY, HUNTER_DISPLAY, TREE_DISPLAY, HOURGLASS_DISPLAY,
     SANTA_HITBOX, HUNTER_COUNT, HUNTER_ATTACK_RANGE, HOURGLASS_COUNT,
+    HUNTER_KILL_SCORE, ATTACK_RANGE, ATTACK_COOLDOWN,
 )
 from src.utils import load_spritesheet, load_image, draw_text, Animator, ParticleEmitter
 
@@ -118,6 +119,8 @@ class Santa:
         self.sprites = sprites  # {'down': Animator, 'right': Animator, 'up': Animator}
         self.direction = 'down'
         self.last_horizontal = 'right'
+        self.charges = 0            # gift charges collected from hourglasses
+        self.attack_cooldown = 0.0  # seconds until next attack allowed
 
     @property
     def rect(self):
@@ -149,6 +152,9 @@ class Santa:
             dy = SANTA_MAZE_SPEED
             self.direction = 'down'
 
+        moving = bool(dx or dy)
+        self.attack_cooldown = max(0.0, self.attack_cooldown - dt)
+
         if dx:
             nx = self.x + dx * dt
             if self._passable(nx, self.y):
@@ -159,7 +165,12 @@ class Santa:
                 self.y = ny
 
         anim_key = 'right' if self.direction in ('left', 'right') else self.direction
-        self.sprites[anim_key].update(dt)
+        if moving:
+            self.sprites[anim_key].update(dt)
+        else:
+            # Freeze on frame 0 when standing still
+            self.sprites[anim_key].index = 0
+            self.sprites[anim_key].timer = 0
 
     def draw(self, surface):
         anim_key = 'right' if self.direction in ('left', 'right') else self.direction
@@ -305,6 +316,7 @@ def run_level2(screen, clock, score=0):
     maze_bg   = load_image(os.path.join(BACKGROUNDS_DIR, 'maze_bg.png'))
     tree_img  = load_image(os.path.join(ITEMS_DIR, 'christmass_tree.png'), TREE_DISPLAY)
     hg_img    = load_image(os.path.join(ITEMS_DIR, 'santa_hourglass.png'), HOURGLASS_DISPLAY)
+    kill_icon = load_image(os.path.join(UI_DIR, 'kill_icon.png'), (28, 28))
 
     # ---- Place entities on valid path cells ----
     paths = all_path_cells()
@@ -346,23 +358,35 @@ def run_level2(screen, clock, score=0):
     # ---- State ----
     time_left = float(LEVEL2_TIMER)
     particles = ParticleEmitter()
+    hunter_kills = 0            # how many hunters Santa has killed
     outcome = None      # None | 'victory' | 'game_over'
     end_msg = ''
     result_delay = 2.5  # seconds to show result before returning
 
     # ---- Audio ----
-    bgm_path = os.path.join(BGM_DIR, 'level2_bgm.mp3')
-    if os.path.exists(bgm_path):
-        try:
-            pygame.mixer.music.load(bgm_path)
-            pygame.mixer.music.play(-1)
-        except Exception:
-            pass
+    # Try level2 BGM first (both formats), fall back to level1 BGM if missing
+    bgm_candidates = [
+        os.path.join(BGM_DIR, 'level2_bgm.ogg'),
+        os.path.join(BGM_DIR, 'level2_bgm.mp3'),
+        os.path.join(BGM_DIR, 'level1_bgm.ogg'),
+        os.path.join(BGM_DIR, 'level1_bgm.mp3'),
+    ]
+    for bgm_path in bgm_candidates:
+        if os.path.exists(bgm_path):
+            try:
+                pygame.mixer.music.load(bgm_path)
+                pygame.mixer.music.set_volume(0.5)
+                pygame.mixer.music.play(-1)
+            except Exception:
+                pass
+            break
 
     sfx = {}
-    for name, filename in (('pickup', 'item_pickup.wav'),
-                           ('clear',  'level_clear.wav'),
-                           ('over',   'game_over.wav')):
+    for name, filename in (('pickup',       'item_pickup.wav'),
+                           ('clear',        'level_clear.wav'),
+                           ('over',         'game_over.wav'),
+                           ('attack',       'santa_attack.wav'),
+                           ('hunter_die',   'hunter_die.wav')):
         path = os.path.join(SFX_DIR, filename)
         if os.path.exists(path):
             try:
@@ -381,6 +405,37 @@ def run_level2(screen, clock, score=0):
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pygame.mixer.music.stop()
                 return {"next_state": STATE_GAME_OVER, "score": score}
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_w:
+                # Gift attack — only if Santa has charges and cooldown is ready
+                if outcome is None and santa.charges > 0 and santa.attack_cooldown <= 0:
+                    # Find nearest hunter within ATTACK_RANGE
+                    nearest = None
+                    nearest_dist = ATTACK_RANGE
+                    for h in hunters:
+                        d = math.hypot(h.x - santa.x, h.y - santa.y)
+                        if d <= nearest_dist:
+                            nearest_dist = d
+                            nearest = h
+                    if nearest is not None:
+                        hunters.remove(nearest)
+                        score += HUNTER_KILL_SCORE
+                        hunter_kills += 1
+                        santa.charges -= 1
+                        santa.attack_cooldown = ATTACK_COOLDOWN
+                        # Death burst particles
+                        particles.emit(nearest.x, nearest.y, 40,
+                                       color=(255, 100, 50),
+                                       speed_range=(60, 200),
+                                       lifetime_range=(0.4, 1.0),
+                                       size_range=(3, 7))
+                        if 'hunter_die' in sfx:
+                            sfx['hunter_die'].play()
+                        if 'attack' in sfx:
+                            sfx['attack'].play()
+                    else:
+                        # No hunter in range — still play attack sound, waste no charge
+                        if 'attack' in sfx:
+                            sfx['attack'].play()
 
         # ---- Update ----
         if outcome is None:
@@ -409,6 +464,7 @@ def run_level2(screen, clock, score=0):
                 if santa.rect.colliderect(hg.rect):
                     hg.collected = True
                     time_left += TIME_BONUS
+                    santa.charges += 1          # gain 1 gift attack charge
                     particles.emit(hg.x, hg.y, 25, color=(255, 220, 80),
                                    speed_range=(40, 120), lifetime_range=(0.3, 0.7))
                     if 'pickup' in sfx:
@@ -465,7 +521,7 @@ def run_level2(screen, clock, score=0):
         particles.draw(screen)
 
         # HUD — timer bar background
-        _draw_hud(screen, time_left, score)
+        _draw_hud(screen, time_left, score, santa.charges, hunter_kills, kill_icon, hg_img)
 
         # Outcome overlay
         if outcome:
@@ -503,20 +559,28 @@ def _spawn_fireworks(particles):
                        speed_range=(60, 220), lifetime_range=(0.5, 1.4), size_range=(2, 7))
 
 
-def _draw_hud(surface, time_left, score):
+def _draw_hud(surface, time_left, score, charges, hunter_kills, kill_icon, hg_img):
     # Semi-transparent HUD bar at top
-    bar = pygame.Surface((SCREEN_WIDTH, 36), pygame.SRCALPHA)
+    bar = pygame.Surface((SCREEN_WIDTH, 44), pygame.SRCALPHA)
     bar.fill((0, 0, 0, 150))
     surface.blit(bar, (0, 0))
 
-    # Timer
+    # Timer (centre)
     mins = int(time_left) // 60
     secs = int(time_left) % 60
     timer_color = (255, 80, 80) if time_left < 30 else (255, 255, 255)
     draw_text(surface, f"TIME  {mins:02d}:{secs:02d}",
-              (SCREEN_WIDTH // 2, 5), size=36, color=timer_color, center=True)
+              (SCREEN_WIDTH // 2, 6), size=36, color=timer_color, center=True)
 
-    # Score (right-aligned via font measurement)
-    font = pygame.font.SysFont(None, 36)
+    # Score (right side)
+    font = pygame.font.SysFont(None, 32)
     score_surf = font.render(f"Score: {score}", True, (255, 255, 255))
-    surface.blit(score_surf, (SCREEN_WIDTH - score_surf.get_width() - 12, 5))
+    surface.blit(score_surf, (SCREEN_WIDTH - score_surf.get_width() - 12, 8))
+
+    # Power charges
+    charge_color = (255, 220, 80) if charges > 0 else (150, 150, 150)
+    draw_text(surface, f"Power x{charges}", (8, 10), size=24, color=charge_color)
+
+    # Hunter kill count
+    surface.blit(kill_icon, (90, 8))
+    draw_text(surface, f"x{hunter_kills}", (122, 10), size=28, color=(255, 180, 80))

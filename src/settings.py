@@ -33,7 +33,7 @@ STATE_VICTORY = "victory"
 
 # ========== Level 1 Settings ==========
 SANTA_HP = 10
-LEVEL1_DURATION = 20       # seconds
+LEVEL1_DURATION = 5       # seconds
 KILL_SCORE = 1                  # points per wildman kill
 SANTA_SPEED = 5                 # pixels per frame
 MAGIC_BALL_SPEED = 8            # pixels per frame (upward)
@@ -46,15 +46,18 @@ ROAD_LEFT = 430                 # left boundary of snow road (screen coords)
 ROAD_RIGHT = 850                # right boundary of snow road (screen coords)
 
 # ========== Level 2 Settings ==========
-LEVEL2_TIMER = 180              # seconds
+LEVEL2_TIMER = 60               # seconds
 TIME_BONUS = 15                 # seconds added per hourglass pickup
 MAZE_TILE_SIZE = 10             # pixels per maze cell (128x72 grid, matched to maze_bg.png)
 SANTA_MAZE_SPEED = 80           # pixels per second in maze
-HUNTER_SPEED_PPS = 55           # pixels per second for hunter movement
+HUNTER_SPEED_PPS = 70           # pixels per second for hunter movement
 HUNTER_PATHFIND_INTERVAL = 0.5  # seconds between path recalculations
-HUNTER_COUNT = 2                # number of hunters in maze
+HUNTER_COUNT = 5                # number of hunters in maze
 HUNTER_ATTACK_RANGE = 60        # pixels — switch to attack anim when this close
-HOURGLASS_COUNT = 3             # number of hourglasses in maze
+HUNTER_KILL_SCORE = 500         # score awarded for killing a hunter with gift
+ATTACK_RANGE = 100              # pixels — max distance for gift attack to hit hunter
+ATTACK_COOLDOWN = 1.0           # seconds between gift attacks
+HOURGLASS_COUNT = 7             # number of hourglasses in maze
 SANTA_DISPLAY = (80, 80)        # Santa sprite display size in maze (px)
 HUNTER_DISPLAY = (80, 80)       # Hunter sprite display size (px)
 TREE_DISPLAY = (64, 64)         # Christmas tree display size (px)
